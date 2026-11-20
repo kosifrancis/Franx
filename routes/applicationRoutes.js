@@ -1,0 +1,10 @@
+const router = require('express').Router();
+const protect = require('../middleware/authMiddleware');
+const roles = require('../middleware/roleMiddlware');
+const c = require('../controllers/applicationController');
+router.use(protect);
+router.post('/', roles('freelancer'), c.applyToJob);
+router.get('/mine', c.listMyApplications);
+router.get('/job/:jobId', roles('employer'), c.listJobApplications);
+router.patch('/:id', roles('employer'), c.updateApplicationStatus);
+module.exports = router;

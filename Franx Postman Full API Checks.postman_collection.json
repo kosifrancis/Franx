@@ -1,0 +1,98 @@
+{
+  "info": {
+    "name": "Franx API — Full Endpoint Checks",
+    "description": "Sequential smoke and CRUD checks for every Franx API route. Uses a temporary isolated test database via the local API server.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:3000" },
+    { "key": "employerEmail", "value": "" },
+    { "key": "freelancerEmail", "value": "" },
+    { "key": "employerToken", "value": "" },
+    { "key": "freelancerToken", "value": "" },
+    { "key": "freelancerId", "value": "" },
+    { "key": "jobId", "value": "" },
+    { "key": "applicationId", "value": "" },
+    { "key": "contractId", "value": "" },
+    { "key": "notificationId", "value": "507f1f77bcf86cd799439011" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        { "name": "GET /", "request": { "method": "GET", "url": "{{baseUrl}}/" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('health returns 200', () => pm.response.to.have.status(200));"] } }] }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        { "name": "POST /api/auth/register — employer", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"Postman Test Employer\",\n  \"email\": \"employer-{{$guid}}@example.test\",\n  \"password\": \"TestPass123!\",\n  \"phoneNumber\": \"000000001\",\n  \"role\": \"employer\",\n  \"companyName\": \"Postman Test Co\"\n}" }, "url": "{{baseUrl}}/api/auth/register" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('employer registration returns 201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('employerEmail', pm.response.json().user.email);"] } }] },
+        { "name": "POST /api/auth/register — freelancer", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"Postman Test Freelancer\",\n  \"email\": \"freelancer-{{$guid}}@example.test\",\n  \"password\": \"TestPass123!\",\n  \"phoneNumber\": \"000000002\",\n  \"role\": \"freelancer\",\n  \"professionalTitle\": \"QA Tester\",\n  \"skills\": [\"QA\"]\n}" }, "url": "{{baseUrl}}/api/auth/register" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('freelancer registration returns 201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('freelancerEmail', pm.response.json().user.email);"] } }] },
+        { "name": "POST /api/auth/login — employer", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{employerEmail}}\",\n  \"password\": \"TestPass123!\"\n}" }, "url": "{{baseUrl}}/api/auth/login" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('employer login returns 200', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('employerToken', pm.response.json().token);"] } }] },
+        { "name": "POST /api/auth/login — freelancer", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{freelancerEmail}}\",\n  \"password\": \"TestPass123!\"\n}" }, "url": "{{baseUrl}}/api/auth/login" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('freelancer login returns 200', () => pm.response.to.have.status(200));", "pm.collectionVariables.set('freelancerToken', pm.response.json().token);", "pm.collectionVariables.set('freelancerId', pm.response.json().user.id);"] } }] }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "item": [
+        { "name": "GET /api/jobs", "request": { "method": "GET", "url": "{{baseUrl}}/api/jobs" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('list jobs returns 200 and array', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] } }] },
+        { "name": "POST /api/jobs", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{employerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Postman Endpoint Test\",\n  \"description\": \"Temporary integration check\",\n  \"skills\": [\"QA\"],\n  \"budget\": 100,\n  \"budgetType\": \"fixed\"\n}" }, "url": "{{baseUrl}}/api/jobs" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('create job returns 201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('jobId', pm.response.json()._id);"] } }] },
+        { "name": "GET /api/jobs/:id", "request": { "method": "GET", "url": "{{baseUrl}}/api/jobs/{{jobId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('get job returns 200', () => pm.response.to.have.status(200));"] } }] },
+        { "name": "PATCH /api/jobs/:id", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{employerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Postman Endpoint Test Updated\"\n}" }, "url": "{{baseUrl}}/api/jobs/{{jobId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('update job returns 200', () => pm.response.to.have.status(200));"] } }] }
+      ]
+    },
+    {
+      "name": "Applications",
+      "item": [
+        { "name": "POST /api/applications", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"job\": \"{{jobId}}\",\n  \"proposal\": \"Temporary Postman test proposal\",\n  \"proposedRate\": 50\n}" }, "url": "{{baseUrl}}/api/applications" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('apply returns 201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('applicationId', pm.response.json()._id);"] } }] },
+        { "name": "GET /api/applications/mine", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }], "url": "{{baseUrl}}/api/applications/mine" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('my applications returns 200 and array', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] } }] },
+        { "name": "GET /api/applications/job/:jobId", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{employerToken}}" }], "url": "{{baseUrl}}/api/applications/job/{{jobId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('job applications returns 200 and array', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] } }] },
+        { "name": "PATCH /api/applications/:id", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{employerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"accepted\"\n}" }, "url": "{{baseUrl}}/api/applications/{{applicationId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('accept application returns 200', () => pm.response.to.have.status(200));"] } }] }
+      ]
+    },
+    {
+      "name": "Contracts",
+      "item": [
+        { "name": "POST /api/contracts", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{employerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"application\": \"{{applicationId}}\",\n  \"amount\": 100,\n  \"terms\": \"Temporary Postman test\"\n}" }, "url": "{{baseUrl}}/api/contracts" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('create contract returns 201', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('contractId', pm.response.json()._id);"] } }] },
+        { "name": "GET /api/contracts", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{employerToken}}" }], "url": "{{baseUrl}}/api/contracts" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('list contracts returns 200 and array', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] } }] },
+        { "name": "PATCH /api/contracts/:id/status", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{employerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"completed\"\n}" }, "url": "{{baseUrl}}/api/contracts/{{contractId}}/status" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('complete contract returns 200', () => pm.response.to.have.status(200));"] } }] }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        { "name": "POST /api/messages", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{employerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"recipient\": \"{{freelancerId}}\",\n  \"contract\": \"{{contractId}}\",\n  \"body\": \"Temporary Postman endpoint test\"\n}" }, "url": "{{baseUrl}}/api/messages" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('send message returns 201', () => pm.response.to.have.status(201));"] } }] },
+        { "name": "GET /api/messages/:userId", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }], "url": "{{baseUrl}}/api/messages/{{freelancerId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('conversation returns 200 and array', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] } }] }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        { "name": "GET /api/notifications", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }], "url": "{{baseUrl}}/api/notifications" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('list notifications returns 200 and array', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] } }] },
+        { "name": "PATCH /api/notifications/:id/read (unknown id returns 404)", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }], "url": "{{baseUrl}}/api/notifications/{{notificationId}}/read" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('unknown notification returns 404', () => pm.response.to.have.status(404));"] } }] }
+      ]
+    },
+    {
+      "name": "Profiles",
+      "item": [
+        { "name": "GET /api/profiles/me", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }], "url": "{{baseUrl}}/api/profiles/me" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('get my profile returns 200', () => pm.response.to.have.status(200));"] } }] },
+        { "name": "PATCH /api/profiles/me", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{freelancerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bio\": \"Temporary Postman endpoint test\"\n}" }, "url": "{{baseUrl}}/api/profiles/me" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('update my profile returns 200', () => pm.response.to.have.status(200));"] } }] },
+        { "name": "GET /api/profiles/:id", "request": { "method": "GET", "url": "{{baseUrl}}/api/profiles/{{freelancerId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('get public profile returns 200', () => pm.response.to.have.status(200));"] } }] }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        { "name": "POST /api/reviews", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{employerToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"contract\": \"{{contractId}}\",\n  \"rating\": 5,\n  \"comment\": \"Temporary Postman endpoint test\"\n}" }, "url": "{{baseUrl}}/api/reviews" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('create review returns 201', () => pm.response.to.have.status(201));"] } }] },
+        { "name": "GET /api/reviews/user/:userId", "request": { "method": "GET", "url": "{{baseUrl}}/api/reviews/user/{{freelancerId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('list user reviews returns 200 and array', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });"] } }] }
+      ]
+    },
+    {
+      "name": "Cleanup and 404",
+      "item": [
+        { "name": "DELETE /api/jobs/:id", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{employerToken}}" }], "url": "{{baseUrl}}/api/jobs/{{jobId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('delete job returns 204', () => pm.response.to.have.status(204));"] } }] },
+        { "name": "GET /api/not-a-route", "request": { "method": "GET", "url": "{{baseUrl}}/api/not-a-route" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('unknown route returns 404', () => pm.response.to.have.status(404));"] } }] }
+      ]
+    }
+  ]
+}
